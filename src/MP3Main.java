@@ -10,7 +10,9 @@ public class MP3Main {
 		
 		MP3GUI gui = new MP3GUI(con);
 		
-		gui.startGUI();		
+		gui.startGUI();	
+		
+		//
 
 		
 	}
