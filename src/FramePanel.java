@@ -5,14 +5,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 
 import javax.swing.JPanel;
 import javax.swing.JTable;
-
-import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.Player;
 
 
 public class FramePanel extends JPanel {
@@ -23,10 +18,13 @@ public class FramePanel extends JPanel {
 	private ControlPanel controlPanel;
 	private MP3List mp3list;
 	private PaneContainer tabbedPane;
+	private LivePane livePanel;
+	private boolean search;
 	
 	public FramePanel(MP3Container con,PaneContainer tabbedPane) {
 		this.con = con;
 		this.tabbedPane = tabbedPane;
+		search = true;
 	    
 	    JPanel panel = new JPanel();	    
 	    panel.setLayout( new java.awt.BorderLayout() );	    
@@ -54,8 +52,23 @@ public class FramePanel extends JPanel {
 			public void actionPerformed(ActionEvent arg0) {
 				showFilter();			
 			}
+		},new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				showLivePane();			
+			}
 		});
 		add(controlPanel,java.awt.BorderLayout.SOUTH);
+	}
+	
+	private void showLivePane() {
+		if (livePanel == null) {
+			livePanel = new LivePane(tabbedPane);
+			add(livePanel,java.awt.BorderLayout.WEST);
+			revalidate();
+			repaint();
+		}
 	}
 
 	private void showList() {
@@ -73,7 +86,12 @@ public class FramePanel extends JPanel {
 						
 						@Override
 						public void actionPerformed(ActionEvent arg0) {
-							queueFile(Integer.valueOf(arg0.getActionCommand()));							
+							if (arg0.getActionCommand().equals("new")) {
+								tabbedPane.add("Queue", new FramePanel(new MP3Container(),tabbedPane));
+								queueFile(tabbedPane.getComponentCount()-1);
+							} else {
+								queueFile(Integer.valueOf(arg0.getActionCommand()));		
+							}						
 						}
 					},tabbedPane.getTabCount());
 		        	popup.show(evt.getComponent(),
@@ -98,6 +116,9 @@ public class FramePanel extends JPanel {
 			public void keyPressed(KeyEvent arg0) {
 				if (arg0.getKeyCode() == KeyEvent.VK_ENTER) {
 					playFile();
+				}
+				if (arg0.getKeyCode() == KeyEvent.VK_J) {
+					showFilter();
 				}				
 			}
 		});
@@ -134,7 +155,7 @@ public class FramePanel extends JPanel {
 			public void run() {
 						con.add(new File("/home/jovchev/Musik"),searchPanel);
 										
-						mp3list.update(con);
+						//mp3list.update(con);
 						searchPanel.setFound(con.getList().size());
 						
 						con.refreshTagData();						
@@ -146,71 +167,28 @@ public class FramePanel extends JPanel {
 	
 	private void chSelect(int i) {
 		if (con.size() > 0) {
-		//int n = mp3list.getIndex();
-		//mp3list.setSelectedIndex((n+i+con.size()) % con.size());
-		mp3list.grabFocus();
+		int n = mp3list.getIndex();
+		mp3list.setSelectedIndex((n+i+con.size()) % con.size());
+		//mp3list.grabFocus();
 		}
 	}
 	
 
 	private void doSearch() {
-		mp3list.update(con.lookFor(searchPanel.getText()));
+		mp3list.update(con.lookFor(new MP3Filter(true, true, false, searchPanel.getText())));
 		
 		searchPanel.setFound(mp3list.NoE());
 		searchPanel.setSelected(con.getTagCount());
 	}
 		
 	private void playFile(int index) {		
-		
-		FileInputStream in;
-		
-		String path = mp3list.getPath(index);
-		
-		if (!path.equals("")) {
-		
-		try {			
-			
-			in = new FileInputStream(path);
-			
-			if (tabbedPane.getPlayer() != null) {
-				tabbedPane.getPlayer().close();			
-			};
-			
-			//final int sel = index;
-			
-			tabbedPane.setPlayer(new Player(in));		
-			
-			Thread t = new Thread() {
-				public void run() {
-					try {
-						tabbedPane.getPlayer().play();
-					} catch (JavaLayerException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-				}
-			};
-			
-			t.start();
-			
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JavaLayerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		}
-	}
-	
-
-	
-	
+		tabbedPane.setMp3list(mp3list);
+		tabbedPane.playfile(index);
+	}	
 	
 	private void createSearchPanel() {
 			searchPanel = new FilterPanel(new KeyListener() {
-			
+							
 			@Override
 			public void keyTyped(KeyEvent arg0) {
 				
@@ -218,24 +196,34 @@ public class FramePanel extends JPanel {
 			
 			@Override
 			public void keyReleased(KeyEvent arg0) {
-				// TODO Auto-generated method stub
-				doSearch();			
+				if (search) {
+					doSearch();
+					mp3list.setSelectedIndex(0);
+				} else {
+					search = true;
+				}				
 			}
 			
 			@Override
 			public void keyPressed(KeyEvent arg0) {
 				if (arg0.getKeyCode() == KeyEvent.VK_UP) {
 					chSelect(-1);
+					search = false;
 				}
 				if (arg0.getKeyCode() == KeyEvent.VK_DOWN) {
 					chSelect(1);
+					search = false;
+				}
+				if (arg0.getKeyCode() == KeyEvent.VK_ENTER) {
+					playFile();
+					search = false;
 				}
 			}
 		}, new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.add("Search", new FramePanel(con.lookFor(searchPanel.getText()),tabbedPane));			
+				tabbedPane.add("Search", new FramePanel(mp3list.getCon(),tabbedPane));			
 			}
 		});		
 		searchPanel.setMax(con.size());
@@ -247,10 +235,12 @@ public class FramePanel extends JPanel {
 	}
 	
 	private void showFilter() {
+		remove(searchPanel);
 		add(searchPanel,java.awt.BorderLayout.NORTH);
 		searchPanel.set(mp3list.getIndex(),mp3list.NoE(),con.size());
 		revalidate();
 		repaint();
+		searchPanel.Focus();
 	}
 
 	public void setCon(MP3Container con) {

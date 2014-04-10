@@ -15,12 +15,18 @@ public class MP3ClickMenu extends JPopupMenu{
 		
 	for (int i = 0; i < number; i++) {
 		String n = Integer.toString(i);
-		JMenuItem menuItem = new JMenuItem(n);
+		String n1 = Integer.toString(i+1);
+		JMenuItem menuItem = new JMenuItem(n1);
 		menuItem.addActionListener(queAl);
 		menuItem.setActionCommand(n);
 	    menu.add(menuItem);
 	}
 
+		JMenuItem menuItem = new JMenuItem("New");
+		menuItem.addActionListener(queAl);
+		menuItem.setActionCommand("new");
+		menu.add(menuItem);
+	
 		add(menu);
 	
 	}

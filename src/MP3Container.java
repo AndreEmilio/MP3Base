@@ -25,12 +25,12 @@ public class MP3Container {
 		return list.get(i);
 	}
 	
-	public MP3Container lookFor(String word) {
+	public MP3Container lookFor(MP3Filter filter) {
 		Vector<MP3> searchList = new Vector<MP3>();
 		
 		for (int i = 0; i < size();i++) { 
 			  MP3 s = list.get(i); 
-			  if (s.getName().toLowerCase().contains(word.toLowerCase())) {
+			  if (filter.fit(s)) {
 	             searchList.add(s);
 			  }
 	    }
@@ -38,9 +38,9 @@ public class MP3Container {
 		return new MP3Container(searchList);
 	}
 
-	public String getFirst(String word) {
-		return lookFor(word).get(0).getPath();
-	}
+//	public String getFirst(String word) {
+//		return lookFor(word).get(0).getPath();
+//	}
 	
 	public void add(File f,FilterPanel hits) {
 		File[] fileArray = f.listFiles();

@@ -26,7 +26,7 @@ public class MP3GUI {
 	private void initFrame() {
 		meinFrame = new JFrame("Beispiel JFrame");
 	       
-	    meinFrame.setSize(600,600);
+	    meinFrame.setSize(600,620);
 	    
 	    meinFrame.addWindowListener(new WindowListener() {
 			
@@ -56,8 +56,8 @@ public class MP3GUI {
 			
 			@Override
 			public void windowClosing(WindowEvent arg0) {
-				// TODO Auto-generated method stub
-				
+				tabbedPane.stopPlayer();
+				System.exit(0);
 			}
 			
 			@Override

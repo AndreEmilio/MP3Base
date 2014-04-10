@@ -18,21 +18,16 @@ public class MP3List extends JPanel {
 	private MP3Container con;
 	private JTable table;
 	private JScrollPane scroll;
-	private MouseListener ml;
-	private KeyListener kl;
 
 	public MP3List(MP3Container con, MouseListener ml, KeyListener kl) {
 		super();
 		this.con = con;
-		this.ml = ml;
-		this.kl = kl;
-		
 	
 		table = new JTable();
 		
 		setModel();
 		
-		addListeners();
+		addListeners(ml,kl);
 		
 		scroll = new JScrollPane();
 		scroll.setViewportView(table);		
@@ -48,7 +43,7 @@ public class MP3List extends JPanel {
 		update();
 	}
 	
-public void update() {
+	public void update() {
 		
 		remove(scroll);
 		
@@ -73,7 +68,7 @@ public void update() {
 		}
 	}
 	
-	public void addListeners() {
+	public void addListeners(MouseListener ml, KeyListener kl) {
 		table.addMouseListener(ml);
 		table.addKeyListener(kl);
 		
@@ -121,7 +116,11 @@ public void update() {
 	}
 
 	public void setSelectedIndex(int i) {
-		table.changeSelection(i, 0, true, true);		
+		table.setRowSelectionInterval(i, i);	
+	}
+
+	public MP3Container getCon() {
+		return con;
 	}
 	
 }

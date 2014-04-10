@@ -54,6 +54,14 @@ public class MP3 {
 		}	
 	} 
 	
+	public String getArtist() {
+		return artist;
+	}
+
+	public void setArtist(String artist) {
+		this.artist = artist;
+	}
+
 	public String[] getVector() {
 		return new String[]{getName(),artist};
 	}

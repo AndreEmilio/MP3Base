@@ -30,6 +30,7 @@ public class FilterPanel extends JPanel {
 		
 		searchButton = new JButton();
 		searchButton.addActionListener(al);
+		searchButton.setText("Fork");
 		add(searchButton);
 	}
 
@@ -53,5 +54,9 @@ public class FilterPanel extends JPanel {
 		spanel.setSelected(index);
 		spanel.setFound(noE);
 		spanel.setMax(size);		
+	}
+
+	public void Focus() {
+		search.grabFocus();		
 	}
 }
