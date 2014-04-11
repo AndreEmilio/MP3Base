@@ -27,7 +27,12 @@ public class MP3ClickMenu extends JPopupMenu{
 		menuItem.setActionCommand("new");
 		menu.add(menuItem);
 	
+		JMenuItem menuItem2 = new JMenuItem("Mark Next");
+		menuItem2.addActionListener(queAl);
+		menuItem2.setActionCommand("mark");
+		
 		add(menu);
+		add(menuItem2);
 	
 	}
 	

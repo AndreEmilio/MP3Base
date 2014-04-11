@@ -13,7 +13,6 @@ import javax.swing.JTable;
 public class FramePanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
-	private MP3Container con;
 	private FilterPanel searchPanel;
 	private ControlPanel controlPanel;
 	private MP3List mp3list;
@@ -22,14 +21,15 @@ public class FramePanel extends JPanel {
 	private boolean search;
 	
 	public FramePanel(MP3Container con,PaneContainer tabbedPane) {
-		this.con = con;
 		this.tabbedPane = tabbedPane;
 		search = true;
 	    
+		livePanel = tabbedPane.getLivePane();
+		
 	    JPanel panel = new JPanel();	    
 	    panel.setLayout( new java.awt.BorderLayout() );	    
 	    
-	    showList();	
+	    showList(con);	
 	    
 	    createSearchPanel();
 
@@ -58,35 +58,42 @@ public class FramePanel extends JPanel {
 			public void actionPerformed(ActionEvent arg0) {
 				showLivePane();			
 			}
-		});
+		},tabbedPane,mp3list);
 		add(controlPanel,java.awt.BorderLayout.SOUTH);
 	}
 	
-	private void showLivePane() {
-		if (livePanel == null) {
-			livePanel = new LivePane(tabbedPane);
-			add(livePanel,java.awt.BorderLayout.WEST);
-			revalidate();
-			repaint();
-		}
+	public MP3List getMp3list() {
+		return mp3list;
 	}
 
-	private void showList() {
+	private void showLivePane() {
+		
+		if (isAncestorOf(livePanel)) {
+			remove(livePanel);
+		} else {
+			add(livePanel,java.awt.BorderLayout.WEST);	
+		}
+		revalidate();
+		repaint();
+	}
+
+	private void showList(MP3Container con) {
 		mp3list = new MP3List(con,new MouseAdapter() {
 		    public void mouseClicked(MouseEvent evt) {
 				JTable list = (JTable)evt.getSource();
 				searchPanel.setSelected(list.getSelectedRow()+1);	
 				searchPanel.revalidate();
 		        if (evt.getClickCount() == 2) {
-		            int index = list.getSelectedRow();  //list.lo  locationToIndex(evt.getPoint());
-		            playFile(index);
+		            playFile();
 		        } 
 		        if (evt.getButton() == MouseEvent.BUTTON3) {
 		        	MP3ClickMenu popup = new MP3ClickMenu(new ActionListener() {
 						
 						@Override
 						public void actionPerformed(ActionEvent arg0) {
-							if (arg0.getActionCommand().equals("new")) {
+							if (arg0.getActionCommand().equals("mark")) {
+								mp3list.setCurrentSelected();
+							} else if (arg0.getActionCommand().equals("new")) {
 								tabbedPane.add("Queue", new FramePanel(new MP3Container(),tabbedPane));
 								queueFile(tabbedPane.getComponentCount()-1);
 							} else {
@@ -119,7 +126,10 @@ public class FramePanel extends JPanel {
 				}
 				if (arg0.getKeyCode() == KeyEvent.VK_J) {
 					showFilter();
-				}				
+				}	
+				if (arg0.getKeyCode() == KeyEvent.VK_C) {
+					mp3list.scroll();
+				}	
 			}
 		});
 		
@@ -144,7 +154,7 @@ public class FramePanel extends JPanel {
 	}
 
 	private MP3Container getCon() {
-		return con;
+		return mp3list.getMainCon();
 	}
 
 	
@@ -153,12 +163,11 @@ public class FramePanel extends JPanel {
 		
         	Thread t = new Thread() {
 			public void run() {
-						con.add(new File("/home/jovchev/Musik"),searchPanel);
+						mp3list.newFiles(new File("/home/jovchev/Musik"),searchPanel);
 										
-						//mp3list.update(con);
-						searchPanel.setFound(con.getList().size());
+						searchPanel.setFound(mp3list.NoE());
 						
-						con.refreshTagData();						
+						mp3list.refreshTagData();						
 					}
 		    };
 		
@@ -166,24 +175,23 @@ public class FramePanel extends JPanel {
 	}
 	
 	private void chSelect(int i) {
-		if (con.size() > 0) {
+		if (mp3list.NoE() > 0) {
 		int n = mp3list.getIndex();
-		mp3list.setSelectedIndex((n+i+con.size()) % con.size());
-		//mp3list.grabFocus();
+		mp3list.setSelectedIndex((n+i+mp3list.NoE()) % mp3list.NoE());
 		}
 	}
 	
 
 	private void doSearch() {
-		mp3list.update(con.lookFor(new MP3Filter(true, true, false, searchPanel.getText())));
+		mp3list.filter(new MP3Filter(true, true, false, searchPanel.getText()));
 		
 		searchPanel.setFound(mp3list.NoE());
-		searchPanel.setSelected(con.getTagCount());
+		searchPanel.setSelected(mp3list.getMainCon().getTagCount());
 	}
 		
-	private void playFile(int index) {		
-		tabbedPane.setMp3list(mp3list);
-		tabbedPane.playfile(index);
+	private void playFile() {	
+		tabbedPane.setNext(mp3list);
+		tabbedPane.play();
 	}	
 	
 	private void createSearchPanel() {
@@ -223,28 +231,27 @@ public class FramePanel extends JPanel {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.add("Search", new FramePanel(mp3list.getCon(),tabbedPane));			
+				tabbedPane.add("Search", new FramePanel(mp3list.getShowCon().getClone(),tabbedPane));			
 			}
 		});		
-		searchPanel.setMax(con.size());
-		searchPanel.setFound(con.size());
-	}
-	
-	private void playFile() {
-		playFile(mp3list.getIndex());		
+		searchPanel.setMax(mp3list.length());
+		searchPanel.setFound(mp3list.NoE());
 	}
 	
 	private void showFilter() {
-		remove(searchPanel);
-		add(searchPanel,java.awt.BorderLayout.NORTH);
-		searchPanel.set(mp3list.getIndex(),mp3list.NoE(),con.size());
+		if (isAncestorOf(searchPanel)) {
+			remove(searchPanel);
+		} else {
+			add(searchPanel,java.awt.BorderLayout.NORTH);
+			searchPanel.set(mp3list.getIndex(),mp3list.NoE(),mp3list.length());
+			searchPanel.Focus();
+		}
 		revalidate();
 		repaint();
-		searchPanel.Focus();
 	}
 
 	public void setCon(MP3Container con) {
-		this.con = con;		
+		mp3list.setMainCon(con);	
 	}
 
 }

@@ -1,3 +1,5 @@
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
@@ -9,17 +11,30 @@ import javazoom.jl.player.Player;
 
 public class PaneContainer extends JTabbedPane {
 
+	public static final int STOP = -5;
+	public static final int READY = 1;
+	public static final int CHANGED = 2;
+	
 	private Player player;
 	private MP3List mp3list;
+	private MP3 playingMP3;
 	
-	private int currMP3;
-	private MP3List currList;
 	private LivePane livePanel;
+	private int status;
 	
 	private static final long serialVersionUID = 1L;
 
 	public PaneContainer() {
-		
+		status = READY;
+		addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent evt) {
+				if (evt.getClickCount() == 2 && getComponentCount() > 1) {
+					remove(getSelectedIndex());
+					revalidate();
+					repaint();
+		        }
+			}
+		});
 	}
 	
 	public Player getPlayer() {
@@ -38,10 +53,10 @@ public class PaneContainer extends JTabbedPane {
 		this.mp3list = mp3list;
 	}
 	
-	public void playfile(int index) {
+	public void playfile() {
 		FileInputStream in;
 		
-		String path = mp3list.getPath(index);
+		String path = mp3list.getSong().getPath();
 		
 		if (!path.equals("")) {
 		
@@ -54,15 +69,16 @@ public class PaneContainer extends JTabbedPane {
 			};
 			
 			player = new Player(in);		
-			currList = mp3list;
-			currMP3 = index;
 			
-			final int ind = index;
+			markPlaying();
 			
-			if (livePanel != null) {
-				livePanel.set(mp3list.get(index));
-			}
+			setLivePanel();
 			
+			mp3list.markNextSong();
+			mp3list = mp3list.nextList();
+					
+			status = READY;
+						
 			Thread t = new Thread() {
 				public void run() {
 					try {
@@ -71,8 +87,8 @@ public class PaneContainer extends JTabbedPane {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					if (currList == mp3list && currMP3 == ind) {
-						System.out.println(ind);
+					if (status != STOP) {
+						playfile();
 					}
 				}
 			};
@@ -89,20 +105,73 @@ public class PaneContainer extends JTabbedPane {
 		}
 	}
 
+	private void markPlaying() {
+		if (playingMP3 != null) {
+			playingMP3.setPlaying(false);
+		}
+		mp3list.getSong().setPlaying(true);
+		revalidate();
+		repaint();
+		playingMP3 = mp3list.getSong();		
+	}
+
 	public void stopPlayer() {
-		currMP3 = -5;
-		player.close();		
+		status = STOP;
+		if (player != null) {
+			player.close();		
+		}
+		player = null;
+	}
+	
+	public void nextList() {
+		mp3list = mp3list.nextList();
 	}
 	
 	public void setLivePane(LivePane livePanel) {
 		this.livePanel = livePanel;
 	}
 
+	public void setNext(MP3List mp3list) {
+		this.mp3list = mp3list;
+		mp3list.setCurrentSelected();
+		status = CHANGED;
+	}
+	
 	public void play() {
-		playfile(mp3list.getIndex());		
+		if (player != null) {
+			player.close();
+		} else {
+			playfile();
+		}
+	}
+	
+	public void setLivePanel() {
+		if (livePanel != null) {
+			livePanel.set(mp3list.getSong());
+		}
 	}
 
 	public void next() {
-		playfile(mp3list.getIndex()+1);
+		if (status == STOP) {
+			mp3list.markNextSong();
+			mp3list = mp3list.nextList();
+			setLivePanel();
+		} else {
+			play();
+		}
+	}
+
+	public String getCurSongname() {
+		if (mp3list != null) {
+			return mp3list.getSong().getName();
+		}
+		return "nichts";
+	}
+
+	public LivePane getLivePane() {
+		if (livePanel != null){
+			return livePanel;
+		}
+		return new LivePane(this);
 	}
 }

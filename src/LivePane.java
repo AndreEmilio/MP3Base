@@ -18,8 +18,8 @@ public class LivePane extends JPanel {
 	public LivePane(PaneContainer pc) {
 		tabbedPane = pc;
 		
+		curName = new JLabel(tabbedPane.getCurSongname());
 		
-		curName = new JLabel("nix");
 		add(curName);
 		
 		stopButton = new JButton();

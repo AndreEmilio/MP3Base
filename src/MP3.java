@@ -7,12 +7,22 @@ public class MP3 {
 	private String path;
 	private String name;
 	private String artist;
+	private boolean playing;
+
+	public boolean isPlaying() {
+		return playing;
+	}
+
+	public void setPlaying(boolean playing) {
+		this.playing = playing;
+	}
 
 	public MP3(String path, String name) {
 		super();
 		this.path = path;
 		this.name = name;
 		this.artist = "unknown";
+		setPlaying(false);
 	}
 
 	public String getName() {
@@ -65,4 +75,6 @@ public class MP3 {
 	public String[] getVector() {
 		return new String[]{getName(),artist};
 	}
+	
+	
 }
